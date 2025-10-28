@@ -3,13 +3,10 @@ const axios = require("axios");
 const mysql = require("mysql2/promise");
 const dotenv = require("dotenv");
 
-// Load .env jika ada (tidak wajib)
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3101;
 
-// 🔧 Fallback default values (jika .env tidak tersedia)
 const DB_CONFIG = {
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "hubnet",
@@ -17,7 +14,6 @@ const DB_CONFIG = {
   database: process.env.DB_NAME || "hubnet",
 };
 
-// Log konfigurasi koneksi (tanpa menampilkan password)
 console.log("🛠 Database Configuration:");
 console.log({
   host: DB_CONFIG.host,
@@ -25,7 +21,6 @@ console.log({
   database: DB_CONFIG.database,
 });
 
-// 🧠 Buat koneksi pool
 (async () => {
   let db;
   try {
@@ -40,9 +35,10 @@ console.log({
     process.exit(1);
   }
 
-  // ⚡ Endpoint untuk GET dan INSERT data
-  app.get("/api/sync-hubnet", async (req, res) => {
+  // Fungsi sinkronisasi utama
+  const syncHubnet = async () => {
     try {
+      console.log("🔄 Fetching data from external API...");
       const { data } = await axios.get("http://139.5.150.15:3006/api/data");
       const rows = Array.isArray(data) ? data : [data];
 
@@ -101,20 +97,20 @@ console.log({
         inserted++;
       }
 
-      res.json({
-        message: "✅ Sync completed",
-        inserted,
-        skipped,
-        totalFetched: rows.length,
-      });
+      console.log(`✅ Sync completed — Inserted: ${inserted}, Skipped: ${skipped}, Total: ${rows.length}`);
     } catch (err) {
       console.error("❌ Error during sync:", err.message);
-      res.status(500).json({ error: err.message });
     }
-  });
+  };
+
+  // Jalankan sinkronisasi langsung saat server start
+  await syncHubnet();
 
   // Jalankan server
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });
+
+  // (Opsional) — jalankan ulang sync tiap 1 jam
+  setInterval(syncHubnet, 60 * 60 * 1000); // 1 jam
 })();
