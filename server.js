@@ -35,7 +35,6 @@ console.log({
     process.exit(1);
   }
 
-  // Fungsi sinkronisasi utama
   const syncHubnet = async () => {
     try {
       console.log("🔄 Fetching data from external API...");
@@ -44,8 +43,16 @@ console.log({
 
       let inserted = 0;
       let skipped = 0;
+      let nullAwb = 0;
 
       for (const item of rows) {
+        // Skip jika AWB_NO kosong atau null
+        if (!item.AWB_NO) {
+          nullAwb++;
+          console.warn("⚠️ Skipped: missing AWB_NO for record:", item);
+          continue;
+        }
+
         const [exists] = await db.query(
           "SELECT AWB_NO FROM epost_dt_hubnet_dsh WHERE AWB_NO = ? LIMIT 1",
           [item.AWB_NO]
@@ -97,20 +104,20 @@ console.log({
         inserted++;
       }
 
-      console.log(`✅ Sync completed — Inserted: ${inserted}, Skipped: ${skipped}, Total: ${rows.length}`);
+      console.log(
+        `✅ Sync completed — Inserted: ${inserted}, Skipped (existing): ${skipped}, Skipped (null AWB): ${nullAwb}, Total fetched: ${rows.length}`
+      );
     } catch (err) {
       console.error("❌ Error during sync:", err.message);
     }
   };
 
-  // Jalankan sinkronisasi langsung saat server start
   await syncHubnet();
 
-  // Jalankan server
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });
 
-  // (Opsional) — jalankan ulang sync tiap 1 jam
-  setInterval(syncHubnet, 60 * 60 * 1000); // 1 jam
+  // Auto sync tiap 1 jam
+  setInterval(syncHubnet, 60 * 60 * 1000);
 })();
