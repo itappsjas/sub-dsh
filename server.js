@@ -7,6 +7,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3101;
 
+// Konfigurasi database
 const DB_CONFIG = {
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "hubnet",
@@ -46,14 +47,14 @@ console.log("🛠 Database Configuration:", {
 
       for (const item of rows) {
         try {
-          // Skip jika AWB_NO kosong
+          // Skip record tanpa AWB_NO
           if (!item.AWB_NO) {
             nullAwb++;
             console.warn("⚠️ Skipped: missing AWB_NO", item);
             continue;
           }
 
-          // Skip jika record sudah ada
+          // Cek duplikat
           const [exists] = await db.query(
             "SELECT AWB_NO FROM epost_dt_hubnet_dsh WHERE AWB_NO = ? LIMIT 1",
             [item.AWB_NO]
@@ -64,7 +65,7 @@ console.log("🛠 Database Configuration:", {
             continue;
           }
 
-          // Insert record
+          // Insert ke database
           const sql = `
             INSERT INTO epost_dt_hubnet_dsh (
               AWB_NO, COD_FLT_CAR, COD_FLT_NUM, FLT_NUMBER, DAT_FLT_ORI,
@@ -118,7 +119,7 @@ console.log("🛠 Database Configuration:", {
     }
   };
 
-  // Run pertama kali
+  // Jalankan pertama kali
   await syncHubnet();
 
   // Jalankan server
