@@ -39,7 +39,7 @@ console.log({
   const syncHubnet = async () => {
     try {
       console.log("🔄 Fetching data from external API...");
-      const { data } = await axios.get("http://139.5.150.15:3006/api/data");
+      const { data } = await axios.get("http://139.5.150.205:3002/api/hubnet");
       const rows = Array.isArray(data) ? data : [data];
 
       let inserted = 0;
