@@ -3,36 +3,49 @@ const axios = require("axios");
 const mysql = require("mysql2/promise");
 const dotenv = require("dotenv");
 
+// Load .env jika ada (tidak wajib)
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3101;
 
-// Validasi variabel environment penting
-const requiredEnv = ["DB_HOST", "DB_USER", "DB_NAME"];
-for (const key of requiredEnv) {
-  if (!process.env[key]) {
-    console.warn(`⚠️  Warning: environment variable ${key} is not set`);
-  }
-}
+// 🔧 Fallback default values (jika .env tidak tersedia)
+const DB_CONFIG = {
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "hubnet",
+  password: process.env.DB_PASS || "JasHubnet2025!",
+  database: process.env.DB_NAME || "hubnet",
+};
 
-// Koneksi ke MySQL
+// Log konfigurasi koneksi (tanpa menampilkan password)
+console.log("🛠 Database Configuration:");
+console.log({
+  host: DB_CONFIG.host,
+  user: DB_CONFIG.user,
+  database: DB_CONFIG.database,
+});
+
+// 🧠 Buat koneksi pool
 (async () => {
-  const db = await mysql.createPool({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "hubnet",
-    password: process.env.DB_PASS || "JasHubnet2025!",
-    database: process.env.DB_NAME || "hubnet",
-    waitForConnections: true,
-    connectionLimit: 10,
-  });
+  let db;
+  try {
+    db = await mysql.createPool({
+      ...DB_CONFIG,
+      waitForConnections: true,
+      connectionLimit: 10,
+    });
+    console.log("✅ Connected to MySQL database.");
+  } catch (err) {
+    console.error("❌ Failed to connect to MySQL:", err.message);
+    process.exit(1);
+  }
 
-  // Endpoint untuk GET dan insert
+  // ⚡ Endpoint untuk GET dan INSERT data
   app.get("/api/sync-hubnet", async (req, res) => {
     try {
-      // Ambil data dari API eksternal
       const { data } = await axios.get("http://139.5.150.15:3006/api/data");
       const rows = Array.isArray(data) ? data : [data];
+
       let inserted = 0;
       let skipped = 0;
 
@@ -89,18 +102,19 @@ for (const key of requiredEnv) {
       }
 
       res.json({
-        message: `✅ Sync completed`,
+        message: "✅ Sync completed",
         inserted,
         skipped,
         totalFetched: rows.length,
       });
     } catch (err) {
-      console.error("❌ Error:", err.message);
+      console.error("❌ Error during sync:", err.message);
       res.status(500).json({ error: err.message });
     }
   });
 
-  app.listen(PORT, () =>
-    console.log(`🚀 Server running on port ${PORT}`)
-  );
+  // Jalankan server
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 })();
