@@ -38,25 +38,31 @@ console.log("🛠 Database Configuration:", {
   const syncHubnet = async () => {
     try {
       console.log("🔄 Fetching data from external API...");
-      const { data } = await axios.get("http://139.5.150.205:3002/api/hubnet");
-      const rows = Array.isArray(data) ? data : [data];
+      const response = await axios.get("http://139.5.150.205:3002/api/hubnet");
 
+      // Pastikan rows adalah array yang benar
+      const rows = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data.data)
+        ? response.data.data
+        : [response.data];
+
+      console.log(`🔍 Total records fetched: ${rows.length}`);
       let inserted = 0;
       let skipped = 0;
       let nullAwb = 0;
 
       for (const item of rows) {
         try {
-          // Skip record tanpa AWB_NO
           if (!item.AWB_NO) {
             nullAwb++;
             console.warn("⚠️ Skipped: missing AWB_NO", item);
             continue;
           }
 
-          // Cek duplikat
+          // Cek duplikat berdasarkan AWB_NO
           const [exists] = await db.query(
-            "SELECT AWB_NO FROM epost_dt_hubnet_dsh WHERE AWB_NO = ? LIMIT 1",
+            "SELECT 1 FROM epost_dt_hubnet_dsh WHERE AWB_NO = ? LIMIT 1",
             [item.AWB_NO]
           );
 
@@ -65,7 +71,7 @@ console.log("🛠 Database Configuration:", {
             continue;
           }
 
-          // Insert ke database
+          // Insert record
           const sql = `
             INSERT INTO epost_dt_hubnet_dsh (
               AWB_NO, COD_FLT_CAR, COD_FLT_NUM, FLT_NUMBER, DAT_FLT_ORI,
@@ -107,7 +113,7 @@ console.log("🛠 Database Configuration:", {
           inserted++;
           console.log("✅ Inserted:", item.AWB_NO);
         } catch (err) {
-          console.error("❌ Failed insert AWB_NO:", item.AWB_NO, err.message);
+          console.error("❌ Failed insert AWB_NO:", item.AWB_NO || "(no AWB_NO)", err.message);
         }
       }
 
