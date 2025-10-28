@@ -134,5 +134,5 @@ console.log("🛠 Database Configuration:", {
   });
 
   // Auto sync tiap 1 jam
-  setInterval(syncHubnet, 60 * 60 * 1000);
+  setInterval(syncHubnet, 1 * 60 * 1000);
 })();
