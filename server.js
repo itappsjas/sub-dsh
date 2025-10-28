@@ -78,8 +78,8 @@ console.log("🛠 Database Configuration:", {
               PORT_ORI, PORT_DIS, SHIPMENT_ORI, SHIPMENT_DIS,
               QTY_SHP_PCS, QTY_SHP_WGT, QTY_SHP_VOL, CHG_WGT,
               DES_NOG, COD_COM, COD_SUB_COM, DES_BC11_EXP, DAT_BC11_EXP,
-              FLG_IMP_EXP, FLG_DOM_ITL, SENT_STATUS, RF_ID, DAT_RFID, is_uploaded
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              FLG_IMP_EXP, FLG_DOM_ITL, SENT_STATUS, RF_ID, DAT_RFID
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
           const values = [
@@ -106,7 +106,6 @@ console.log("🛠 Database Configuration:", {
             item.SENT_STATUS,
             item.RF_ID,
             item.DAT_RFID ? new Date(item.DAT_RFID) : null,
-            item.is_uploaded,
           ];
 
           await db.query(sql, values);
